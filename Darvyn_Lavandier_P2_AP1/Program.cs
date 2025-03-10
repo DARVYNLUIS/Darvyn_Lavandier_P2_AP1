@@ -1,4 +1,8 @@
 using Darvyn_Lavandier_P2_AP1.Components;
+using Darvyn_Lavandier_P2_AP1.DAL;
+using Microsoft.AspNetCore.Cors.Infrastructure;
+using Microsoft.EntityFrameworkCore;
+
 
 namespace Darvyn_Lavandier_P2_AP1
 {
@@ -12,6 +16,13 @@ namespace Darvyn_Lavandier_P2_AP1
             builder.Services.AddRazorComponents()
                 .AddInteractiveServerComponents();
 
+            //obtenemos el ConStr para usarlocon el contexto
+            var ConSrt = builder.Configuration.GetConnectionString("SqlConStr");
+
+            //Agregar contexto al builder con ConStr
+            builder.Services.AddDbContextFactory<Contexto>(o => o.UseSqlServer(ConSrt));
+
+     
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.
@@ -34,3 +45,4 @@ namespace Darvyn_Lavandier_P2_AP1
         }
     }
 }
+
