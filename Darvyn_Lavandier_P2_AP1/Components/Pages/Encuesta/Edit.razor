@@ -1,0 +1,145 @@
+﻿@page "/Encuesta/Edit/{EncuestaId:int}"
+@using Darvyn_Lavandier_P2_AP1.Services
+@using Darvyn_Lavandier_P2_AP1.Models
+@inject EncuestaService encuestaService
+@inject CiudadService ciudadService
+@inject NavigationManager navigationManager
+
+<PageTitle>Editar Encuesta</PageTitle>
+
+<EditForm Model="Encuesta" OnValidSubmit="Modificar">
+    <DataAnnotationsValidator />
+
+    <div class="container">
+        <div class="card shadow-lg">
+            <div class="card-header text-center">
+                <h5 class="card-title">Editar Encuesta</h5>
+            </div>
+
+            <div class="card-body">
+                @* EncuestaId *@
+                <div class="mb-3">
+                    <label class="form-label"><strong>EncuestaId</strong></label>
+                    <InputNumber class="form-control" @bind-Value="Encuesta.EncuestaId" readonly></InputNumber>
+                </div>
+
+                @* Fecha *@
+                <div class="mb-3">
+                    <label class="form-label"><strong>Fecha</strong></label>
+                    <InputDate class="form-control" @bind-Value="Encuesta.Fecha"></InputDate>
+                </div>
+
+                @* Asignatura *@
+                <div class="mb-3">
+                    <label class="form-label"><strong>Asignatura</strong></label>
+                    <InputText class="form-control" @bind-Value="Encuesta.Asignatura" />
+                </div>
+
+                @* Detalles de la Encuesta *@
+                <div class="border border-success p-3 mt-3">
+                    <h5>Detalles de la Encuesta</h5>
+
+                    <CiudadPicker Ciudades="ListaCiudades"
+                                  CiudadId="DetalleSeleccionado.CiudadId"
+                                  Monto="DetalleSeleccionado.Monto"
+                                  OnCiudadSelected="HandleCiudadSelected" />
+                    <hr />
+                    <table class="table table-light">
+                        <thead class="table table-striped">
+                            <tr class="text-center">
+                                <th>CiudadId</th>
+                                <th>Monto</th>
+                                <th>Remover</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-center">
+                            @foreach (var detalle in Encuesta.Detalles) {
+                                <tr>
+                                    <th>@detalle.CiudadId</th>
+                                    <th>@detalle.Monto.ToString("N2")</th>
+                                    <th>
+                                        <button type="button" class="btn btn-outline-danger bi bi-trash"
+                                            @onclick="() => RemoverDetalle(detalle)">
+                                        </button>
+                                    </th>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                    <hr />
+                </div>
+
+                @* Monto Total *@
+                <div class="row mt-2">
+                    <div class="col-6 offset-6">
+                        <div class="mb-3">
+                            <label class="form-label"><strong>Monto Total</strong></label>
+                            <label class="form-control text-end"><strong>@Encuesta.Monto.ToString("N2")</strong></label>
+
+                            <ValidationMessage For="(() => Encuesta.Monto)" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            @* Footer *@
+            <div class="card-footer text-center mt-2">
+                <a href="/Encuesta/Index" class="btn btn-secondary"> <span class="bi bi-arrow-left"></span> Volver</a>
+                <button type="submit" class="btn btn-primary bi bi-floppy"> Guardar</button>
+            </div>
+        </div>
+    </div>
+</EditForm>
+
+@code {
+    [Parameter]
+    public int EncuestaId { get; set; }
+    public Encuesta Encuesta { get; set; } = new Encuesta();
+    public EncuestaDetalle DetalleSeleccionado { get; set; } = new();
+    public List<Ciudad> ListaCiudades { get; set; } = new List<Ciudad>();
+
+    public string Mensaje { get; set; } = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Encuesta = await encuestaService.Buscar(EncuestaId);
+        ListaCiudades = await ciudadService.ListarCiudades();
+
+        Encuesta.Fecha = DateTime.Now;
+    }
+
+    private async Task HandleCiudadSelected((Ciudad ciudad, double monto) selection)
+    {
+        var detalle = new EncuestaDetalle
+        {
+            CiudadId = selection.ciudad.Id,
+            Monto = (decimal)selection.monto  
+        };
+
+        Encuesta.Detalles.Add(detalle);
+        Encuesta.Monto = Encuesta.Detalles.Sum(d => d.Monto);
+
+        DetalleSeleccionado = new EncuestaDetalle();
+        await Task.CompletedTask;
+    }
+
+    public async Task Modificar()
+    {
+        var paso = await encuestaService.Guardar(Encuesta);
+
+        if (paso)
+        {
+            navigationManager.NavigateTo("/Encuesta/Index");
+        }
+        else
+        {
+            Mensaje = "Hubo un error al guardar los datos.";
+        }
+    }
+
+    public void RemoverDetalle(EncuestaDetalle detalle)
+    {
+        Encuesta.Detalles.Remove(detalle);
+        DetalleSeleccionado = detalle;
+    }
+}
