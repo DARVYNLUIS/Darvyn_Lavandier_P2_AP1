@@ -1,7 +1,7 @@
 using Darvyn_Lavandier_P2_AP1.Components;
-using Darvyn_Lavandier_P2_AP1.DAL;
-using Microsoft.AspNetCore.Cors.Infrastructure;
+using Darvyn_Lavandier_P2_AP1.Models;
 using Microsoft.EntityFrameworkCore;
+using Darvyn_Lavandier_P2_AP1.Services;
 
 
 namespace Darvyn_Lavandier_P2_AP1
@@ -22,7 +22,10 @@ namespace Darvyn_Lavandier_P2_AP1
             //Agregar contexto al builder con ConStr
             builder.Services.AddDbContextFactory<Contexto>(o => o.UseSqlServer(ConSrt));
 
-     
+            // Add services to the container.
+            builder.Services.AddScoped<CiudadService>();
+            builder.Services.AddScoped<EncuestaService>();
+    
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.
