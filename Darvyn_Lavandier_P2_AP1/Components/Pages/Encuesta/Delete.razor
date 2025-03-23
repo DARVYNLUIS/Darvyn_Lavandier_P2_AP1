@@ -1,8 +1,9 @@
 ﻿@page "/Encuesta/Delete/{EncuestaId:int}"
 @using Darvyn_Lavandier_P2_AP1.Models
 @using Darvyn_Lavandier_P2_AP1.Services
-@inject EncuestaService encuestaService
+@inject EncuestaServices encuestaService
 @inject NavigationManager navigationManager
+@rendermode InteractiveServer
 
 <PageTitle>Eliminar Encuesta</PageTitle>
 <div class="container">
@@ -18,31 +19,30 @@
                 <h5><strong>¿Desea eliminar esta encuesta?</strong></h5>
             </div>
             <ul class="mt-4">
-                <li><strong>EncuestaId: </strong>@Encuesta.EncuestaId</li>
+                <li><strong>EncuestaId: </strong>@Encuesta.EncuestasId</li>
                 <li><strong>Fecha: </strong>@Encuesta.Fecha.ToString("dd/MM/yyyy")</li>
                 <li><strong>Asignatura: </strong>@Encuesta.Asignatura</li>
             </ul>
 
             @* Mostrar detalles si existen *@
-            @if (Encuesta.Detalles != null && Encuesta.Detalles.Any())
+            @if (Encuesta.EncuestaDetalles != null && Encuesta.EncuestaDetalles.Any())
             {
                 <div class="border border-danger p-2 mt-2">
                     <h7><strong>Detalles de la Encuesta</strong></h7>
                     <div>
-                        @foreach (var detalle in Encuesta.Detalles)
+                        @foreach (var detalle in Encuesta.EncuestaDetalles)
                         {
-                            <li class="mt-2">
-                                Ciudad: @detalle.Ciudad.Nombre, Monto: @detalle.Monto.ToString("N2")
-                            </li>
+                            // Render details
                         }
                     </div>
                 </div>
+            }
             }
         </div>
 
         @* Footer *@
         <div class="card-footer text-center">
-            <a href="/Encuesta/Index" class="btn btn-primary"> <span class="bi bi-arrow-left"></span> Volver</a>
+            <a href="/Encuestas/Index" class="btn btn-primary"> <span class="bi bi-arrow-left"></span> Volver</a>
             <button type="button" class="btn btn-danger bi bi-trash" @onclick="Eliminar"> Eliminar</button>
         </div>
     </div>
@@ -64,12 +64,12 @@
 
     public async Task Eliminar()
     {
-        var eliminado = await encuestaService.Eliminar(Encuesta.EncuestaId);
+        var eliminado = await encuestaService.Eliminar(Encuesta.EncuestasId);
 
         if (eliminado)
         {
             Mensaje = "Encuesta eliminada exitosamente.";
-            navigationManager.NavigateTo("/Encuesta/Index");
+            navigationManager.NavigateTo("/Encuestas/Index");
         }
         else
         {

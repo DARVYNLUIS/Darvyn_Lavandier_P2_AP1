@@ -2,22 +2,39 @@
 
 namespace Darvyn_Lavandier_P2_AP1.Models
 {
-    public class Contexto : DbContext
+    public class Contexto(DbContextOptions<Contexto> options) : DbContext(options)
     {
-        public Contexto(DbContextOptions<Contexto> options) : base(options) { }
+        public virtual DbSet<Encuesta> Encuestas { get; set; }
+        public virtual DbSet<Ciudad> Ciudades { get; set; }
 
-        public DbSet<Encuesta> Encuestas { get; set; }
-        public DbSet<EncuestaDetalle> EncuestaDetalles { get; set; }
-        public DbSet<Ciudad> Ciudades { get; set; }
-
+        public virtual DbSet<EncuestaDetalle> Detalles { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<Ciudad>().HasData(
-                new Ciudad { Id = 1, Nombre = "Santo Domingo" },
-                new Ciudad { Id = 2, Nombre = "Santiago" },
-                new Ciudad { Id = 3, Nombre = "San Francisco de Macoris" }
-            );
+                new List<Ciudad>()
+                {
+            new()
+            {
+                CiudadesId = 1,
+                Nombre = "San Francisco de Macoris",
+                Monto = 0,
 
+            },
+            new()
+            {
+                CiudadesId = 2,
+                Nombre = "La Romana",
+                Monto = 0,
+            },
+            new()
+            {
+                CiudadesId = 3,
+                Nombre = "Salcedo",
+                Monto = 0,
+            }
+
+                }
+            );
             base.OnModelCreating(modelBuilder);
         }
     }

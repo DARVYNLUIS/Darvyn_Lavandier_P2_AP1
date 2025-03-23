@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Darvyn_Lavandier_P2_AP1.Migrations
 {
     [DbContext(typeof(Contexto))]
-    [Migration("20250311003259_Inicial")]
+    [Migration("20250323144658_Inicial")]
     partial class Inicial
     {
         /// <inheritdoc />
@@ -27,45 +27,50 @@ namespace Darvyn_Lavandier_P2_AP1.Migrations
 
             modelBuilder.Entity("Ciudad", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<int>("CiudadesId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CiudadesId"));
+
+                    b.Property<int>("Monto")
+                        .HasColumnType("int");
 
                     b.Property<string>("Nombre")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.HasKey("Id");
+                    b.HasKey("CiudadesId");
 
                     b.ToTable("Ciudades");
 
                     b.HasData(
                         new
                         {
-                            Id = 1,
-                            Nombre = "Santo Domingo"
-                        },
-                        new
-                        {
-                            Id = 2,
-                            Nombre = "Santiago"
-                        },
-                        new
-                        {
-                            Id = 3,
+                            CiudadesId = 1,
+                            Monto = 0,
                             Nombre = "San Francisco de Macoris"
+                        },
+                        new
+                        {
+                            CiudadesId = 2,
+                            Monto = 0,
+                            Nombre = "La Romana"
+                        },
+                        new
+                        {
+                            CiudadesId = 3,
+                            Monto = 0,
+                            Nombre = "Salcedo"
                         });
                 });
 
             modelBuilder.Entity("Darvyn_Lavandier_P2_AP1.Models.Encuesta", b =>
                 {
-                    b.Property<int>("EncuestaId")
+                    b.Property<int>("EncuestasId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("EncuestaId"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("EncuestasId"));
 
                     b.Property<string>("Asignatura")
                         .IsRequired()
@@ -74,21 +79,18 @@ namespace Darvyn_Lavandier_P2_AP1.Migrations
                     b.Property<DateTime>("Fecha")
                         .HasColumnType("datetime2");
 
-                    b.Property<decimal>("Monto")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.HasKey("EncuestaId");
+                    b.HasKey("EncuestasId");
 
                     b.ToTable("Encuestas");
                 });
 
             modelBuilder.Entity("EncuestaDetalle", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<int>("DestallesId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("DestallesId"));
 
                     b.Property<int>("CiudadId")
                         .HasColumnType("int");
@@ -96,45 +98,38 @@ namespace Darvyn_Lavandier_P2_AP1.Migrations
                     b.Property<int>("EncuestaId")
                         .HasColumnType("int");
 
-                    b.Property<decimal>("Monto")
-                        .HasColumnType("decimal(18,2)");
+                    b.Property<int>("MontoEncuesta")
+                        .HasColumnType("int");
 
-                    b.HasKey("Id");
+                    b.HasKey("DestallesId");
 
                     b.HasIndex("CiudadId");
 
                     b.HasIndex("EncuestaId");
 
-                    b.ToTable("EncuestaDetalles");
+                    b.ToTable("Detalles");
                 });
 
             modelBuilder.Entity("EncuestaDetalle", b =>
                 {
                     b.HasOne("Ciudad", "Ciudad")
-                        .WithMany("EncuestaDetalles")
+                        .WithMany()
                         .HasForeignKey("CiudadId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Darvyn_Lavandier_P2_AP1.Models.Encuesta", "Encuesta")
-                        .WithMany("Detalles")
+                    b.HasOne("Darvyn_Lavandier_P2_AP1.Models.Encuesta", null)
+                        .WithMany("EncuestaDetalles")
                         .HasForeignKey("EncuestaId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Ciudad");
-
-                    b.Navigation("Encuesta");
-                });
-
-            modelBuilder.Entity("Ciudad", b =>
-                {
-                    b.Navigation("EncuestaDetalles");
                 });
 
             modelBuilder.Entity("Darvyn_Lavandier_P2_AP1.Models.Encuesta", b =>
                 {
-                    b.Navigation("Detalles");
+                    b.Navigation("EncuestaDetalles");
                 });
 #pragma warning restore 612, 618
         }

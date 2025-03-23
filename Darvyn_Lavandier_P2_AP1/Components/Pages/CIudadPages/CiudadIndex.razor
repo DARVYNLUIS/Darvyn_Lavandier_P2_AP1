@@ -1,0 +1,50 @@
+﻿@page "/Ciudades/Index"
+@inject CiudadServices CiudadeServices
+
+<PageTitle>Lista de Ciudades</PageTitle>
+
+<div class="container">
+    <div class="card shadow-lg">
+        <div class="card-header text-center">
+            <h5 class="card-title m-0">Registro de Ciudades</h5>
+        </div>
+
+        <div class="card-body">
+            <table class="table table-hover table-bordered text-center">
+                <thead class="table table-striped text-black">
+                    <tr>
+                        <th>Id</th>
+                        <th>Nombre</th>
+                        <th>Monto</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var ciudad in ListaCiudades)
+                    {
+                        <tr>
+                            <td>@ciudad.CiudadesId</td>
+                            <td>@ciudad.Nombre</td>
+                            <td>@ciudad.Monto.ToString("N2")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="card-footer text-end">
+            <label><strong>Total: @ListaCiudades.Sum(c => c.Monto).ToString("N2")</strong></label>
+        </div>
+    </div>
+</div>
+
+@code {
+    public List<Ciudad> ListaCiudades { get; set; } = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        ListaCiudades = await CiudadeServices.Listar(c => true);
+    }
+}
+
+
+

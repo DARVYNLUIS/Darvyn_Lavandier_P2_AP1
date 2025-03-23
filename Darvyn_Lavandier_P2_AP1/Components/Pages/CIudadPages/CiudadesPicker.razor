@@ -1,0 +1,69 @@
+﻿<div class="col-auto input-group align-items-center">
+    <label class="col-form-label input-group-text">Seleccione:</label>
+
+    <InputSelect class="form-control form-select" @bind-Value="CiudadId">
+        <option disabled value="0">-- Seleccione una ciudad --</option>
+        @foreach (var ciudad in Ciudad)
+        {
+            <option value="@ciudad.CiudadesId">@ciudad.CiudadesId - @ciudad.Nombre ($@ciudad.Monto.ToString("N2"))</option>
+        }
+    </InputSelect>
+
+    <label class="col-form-label input-group-text">Valor:</label>
+    <InputNumber class="form-control" id="quantity-input" @bind-Value="Monto" min="0" />
+
+    <button type="button" class="btn btn-outline-success bi bi-plus" @onclick="TriggerSelection">Agregar</button>
+</div>
+
+@if (ErrorMessage != null)
+{
+    <div class="alert alert-danger" role="alert">
+        @ErrorMessage
+    </div>
+}
+
+@code {
+    [Parameter]
+    public List<Ciudad> Ciudad { get; set; } = new List<Ciudad>();
+
+    [Parameter]
+    public int CiudadId { get; set; }
+
+    [Parameter]
+    public int Monto { get; set; }
+
+    [Parameter]
+    public EventCallback<(Ciudad Prestamo, int Monto)> CiudadSelected { get; set; }
+
+    private string? ErrorMessage { get; set; } = null;
+
+    private async Task TriggerSelection()
+    {
+        ErrorMessage = null;
+
+        // Validar que se haya seleccionado una ciudad válida
+        if (CiudadId <= 0)
+        {
+            ErrorMessage = "Por favor, seleccione una ciudad.";
+            return;
+        }
+
+        // Validar que el monto sea mayor que cero
+        if (Monto <= 0)
+        {
+            ErrorMessage = "No es posible agregar un monto menor o igual a cero.";
+            return;
+        }
+
+        // Buscar la ciudad seleccionada
+        var ciudadSeleccionada = Ciudad.SingleOrDefault(p => p.CiudadesId == CiudadId);
+        if (ciudadSeleccionada == null)
+        {
+            ErrorMessage = "La ciudad seleccionada no es válida.";
+            return;
+        }
+
+        // Si todo es válido, se pasa la ciudad y el monto al EventCallback
+        await CiudadSelected.InvokeAsync((ciudadSeleccionada, Monto));
+    }
+}

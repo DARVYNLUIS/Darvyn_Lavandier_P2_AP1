@@ -1,12 +1,13 @@
 ﻿@page "/Encuesta/Create"
 @using Darvyn_Lavandier_P2_AP1.Services
 @using Darvyn_Lavandier_P2_AP1.Models
-@inject EncuestaService encuestaService
-@inject CiudadService ciudadService
+@inject EncuestaServices encuestaService
+@inject CiudadServices ciudadService
 @inject NavigationManager navigationManager
 @rendermode InteractiveServer
 
 <PageTitle>Crear Encuesta</PageTitle>
+
 <EditForm Model="Encuesta" OnValidSubmit="Guardar">
     <DataAnnotationsValidator />
 
@@ -17,47 +18,47 @@
             </div>
 
             <div class="card-body">
-                @* EncuestaId *@
+                <!-- EncuestaId -->
                 <div class="mb-3">
-                    <label class="form-label"><strong>EncuestaId</strong></label>
-                    <InputNumber class="form-control" @bind-Value="Encuesta.EncuestaId" readonly></InputNumber>
+                    <label class="form-label"><strong>EncuestasId</strong></label>
+                    <InputNumber class="form-control" @bind-Value="Encuesta.EncuestasId" readonly />
                 </div>
 
-                @* Fecha *@
+                <!-- Fecha -->
                 <div class="mb-3">
                     <label class="form-label"><strong>Fecha</strong></label>
-                    <InputDate class="form-control" @bind-Value="Encuesta.Fecha"></InputDate>
+                    <InputDate class="form-control" @bind-Value="Encuesta.Fecha" />
                 </div>
 
-                @* Asignatura *@
+                <!-- Asignatura -->
                 <div class="mb-3">
                     <label class="form-label"><strong>Asignatura</strong></label>
                     <InputText class="form-control" @bind-Value="Encuesta.Asignatura" />
                 </div>
 
-                @* Detalles de la Encuesta *@
+                <!-- Detalles de la Encuesta -->
                 <div class="border border-success p-3 mt-3">
                     <h5>Detalles</h5>
                     <div class="input-group mb-3">
-                        @* InputSelect para Ciudad *@
+                        <!-- InputSelect para Ciudad -->
                         <InputSelect class="form-control" @bind-Value="DetalleSeleccionado.CiudadId">
                             <option value="0" selected disabled>Seleccione Ciudad</option>
-                            @foreach (var ciudad in ListaCiudades)
+                            @foreach (var ciudad in ListaCiudades ?? new List<Ciudad>())
                             {
-                                <option value="@ciudad.Id">@ciudad.Nombre</option>
+                                <option value="@ciudad.CiudadesId">@ciudad.Nombre</option>
                             }
                         </InputSelect>
 
-                        @* InputNumber para Monto *@
-                        <InputNumber class="form-control" @bind-Value="DetalleSeleccionado.Monto"></InputNumber>
+                        <!-- InputNumber para Monto -->
+                        <InputNumber class="form-control" @bind-Value="DetalleSeleccionado.MontoEncuesta" />
 
-                        @* Botón para Agregar detalle *@
+                        <!-- Botón para Agregar detalle -->
                         <button type="button" class="btn btn-success" @onclick="AgregarDetalle">+ Agregar</button>
                     </div>
 
-                    @* Tabla de detalles *@
+                    <!-- Tabla de detalles -->
                     <table class="table table-light">
-                        <thead class="table table-striped">
+                        <thead class="table-striped">
                             <tr class="text-center">
                                 <th>Ciudad</th>
                                 <th>Monto</th>
@@ -65,11 +66,11 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach (var detalle in Encuesta.Detalles)
+                            @foreach (var detalle in Encuesta.EncuestaDetalles ?? new List<EncuestaDetalle>())
                             {
                                 <tr>
                                     <td>@detalle.Ciudad.Nombre</td>
-                                    <td>@detalle.Monto.ToString("N2")</td>
+                                    <td>@detalle.MontoEncuesta.ToString("N2")</td>
                                     <td>
                                         <button type="button" class="btn btn-danger bi bi-trash" @onclick="() => RemoverDetalle(detalle)"></button>
                                     </td>
@@ -78,14 +79,14 @@
                         </tbody>
                     </table>
 
-                    @* Calcular el Monto Total *@
+                    <!-- Calcular el Monto Total -->
                     <div class="mt-3 text-right">
                         <strong>Monto Total:</strong> $@MontoTotal.ToString("N2")
                     </div>
                 </div>
             </div>
 
-            @* Footer *@
+            <!-- Footer -->
             <div class="card-footer text-center mt-2">
                 <a href="/Encuestas/Index" class="btn btn-secondary bi bi-arrow-left"> Volver</a>
                 <button type="submit" class="btn btn-primary bi bi-floppy"> Guardar</button>
@@ -95,42 +96,54 @@
 </EditForm>
 
 @code {
-    public Encuesta Encuesta { get; set; } = new Encuesta();
+    public Encuesta Encuesta { get; set; } = new Encuesta { EncuestaDetalles = new List<EncuestaDetalle>() };
     public EncuestaDetalle DetalleSeleccionado { get; set; } = new EncuestaDetalle();
     public List<Ciudad> ListaCiudades { get; set; } = new List<Ciudad>();
 
-    public decimal MontoTotal => Encuesta.Detalles.Sum(d => d.Monto);
+    public decimal MontoTotal => Encuesta.EncuestaDetalles?.Sum(d => d.MontoEncuesta) ?? 0;
 
     protected override async Task OnInitializedAsync()
     {
+        // Inicializar la lista de ciudades
         ListaCiudades = await ciudadService.Listar(c => true);
         Encuesta.Fecha = DateTime.Now;
     }
 
+    // Agregar detalle a la encuesta
     public void AgregarDetalle()
     {
-        if (DetalleSeleccionado.CiudadId > 0 && DetalleSeleccionado.Monto > 0)
+        if (DetalleSeleccionado.CiudadId > 0 && DetalleSeleccionado.MontoEncuesta > 0)
         {
-            var ciudadSeleccionada = ListaCiudades.FirstOrDefault(c => c.Id == DetalleSeleccionado.CiudadId);
+            // Comprobar si la ciudad ya está agregada en los detalles
+            if (Encuesta.EncuestaDetalles.Any(d => d.CiudadId == DetalleSeleccionado.CiudadId))
+            {
+                return; // No agregar si ya está en la lista de detalles
+            }
+
+            var ciudadSeleccionada = ListaCiudades.FirstOrDefault(c => c.CiudadesId == DetalleSeleccionado.CiudadId);
             if (ciudadSeleccionada != null)
             {
-                Encuesta.Detalles.Add(new EncuestaDetalle
+                // Agregar el nuevo detalle
+                Encuesta.EncuestaDetalles.Add(new EncuestaDetalle
                     {
                         CiudadId = DetalleSeleccionado.CiudadId,
                         Ciudad = ciudadSeleccionada,
-                        Monto = DetalleSeleccionado.Monto
+                        MontoEncuesta = DetalleSeleccionado.MontoEncuesta
                     });
-             
+
+                // Limpiar el detalle seleccionado
                 DetalleSeleccionado = new EncuestaDetalle();
             }
         }
     }
 
+    // Remover detalle de la encuesta
     public void RemoverDetalle(EncuestaDetalle detalle)
     {
-        Encuesta.Detalles.Remove(detalle);
+        Encuesta.EncuestaDetalles.Remove(detalle);
     }
 
+    // Guardar encuesta
     public async Task Guardar()
     {
         var paso = await encuestaService.Guardar(Encuesta);

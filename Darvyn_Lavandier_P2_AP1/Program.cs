@@ -23,9 +23,11 @@ namespace Darvyn_Lavandier_P2_AP1
             builder.Services.AddDbContextFactory<Contexto>(o => o.UseSqlServer(ConSrt));
 
             // Add services to the container.
-            builder.Services.AddScoped<CiudadService>();
-            builder.Services.AddScoped<EncuestaService>();
-    
+            builder.Services.AddScoped<CiudadServices>();
+            builder.Services.AddScoped<EncuestaServices>();
+            builder.Services.AddSignalR(); 
+
+
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.
@@ -36,6 +38,8 @@ namespace Darvyn_Lavandier_P2_AP1
                 app.UseHsts();
             }
 
+
+
             app.UseHttpsRedirection();
 
             app.UseAntiforgery();
@@ -43,6 +47,8 @@ namespace Darvyn_Lavandier_P2_AP1
             app.MapStaticAssets();
             app.MapRazorComponents<App>()
                 .AddInteractiveServerRenderMode();
+
+         
 
             app.Run();
         }

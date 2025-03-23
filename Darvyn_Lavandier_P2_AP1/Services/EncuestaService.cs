@@ -1,71 +1,111 @@
 ﻿using Darvyn_Lavandier_P2_AP1.Models;
-using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
-
+using System.Linq;
+using System.Linq.Expressions;
 
 namespace Darvyn_Lavandier_P2_AP1.Services
 {
-    public class EncuestaService
+    public class EncuestaServices(IDbContextFactory<Contexto> DbFactory)
     {
-        private readonly IDbContextFactory<Contexto> _dbFactory;
-
-        public EncuestaService(IDbContextFactory<Contexto> dbFactory)
+        public async Task<bool> Existe(int id)
         {
-            _dbFactory = dbFactory;
+            await using var contexto = await DbFactory.CreateDbContextAsync();
+            return await contexto.Encuestas.AnyAsync(c => c.EncuestasId == id);
         }
 
-        public async Task<bool> Existe(int encuestaId)
+        private async Task<bool> Insertar(Encuesta encuesta)
         {
-            await using var contexto = await _dbFactory.CreateDbContextAsync();
-            return await contexto.Encuestas.AnyAsync(e => e.EncuestaId == encuestaId);
-        }
+            await using var contexto = await DbFactory.CreateDbContextAsync();
 
-        public async Task<bool> Insertar(Encuesta encuesta)
-        {
-            await using var contexto = await _dbFactory.CreateDbContextAsync();
+            // Agregar la encuesta
             contexto.Encuestas.Add(encuesta);
+
+            // Asegurarse de que las ciudades no se inserten, solo se referencien
+            foreach (var detalle in encuesta.EncuestaDetalles)
+            {
+                if (detalle.Ciudad != null && detalle.Ciudad.CiudadesId > 0)
+                {
+                    contexto.Entry(detalle.Ciudad).State = EntityState.Unchanged;
+
+                }
+                else if (detalle.CiudadId <= 0)
+                {
+                    throw new InvalidOperationException($"El CiudadId {detalle.CiudadId} no es válido para el detalle.");
+                }
+            }
+
             return await contexto.SaveChangesAsync() > 0;
         }
 
-        public async Task<bool> Modificar(Encuesta encuesta)
+        private async Task<bool> Modificar(Encuesta encuesta)
         {
-            await using var contexto = await _dbFactory.CreateDbContextAsync();
-            contexto.Update(encuesta);
+            await using var contexto = await DbFactory.CreateDbContextAsync();
+
+            
+            contexto.Entry(encuesta).State = EntityState.Modified;
+
+            
+            foreach (var detalle in encuesta.EncuestaDetalles)
+            {
+                if (detalle.DestallesId == 0) 
+                {
+                    contexto.Entry(detalle).State = EntityState.Added;
+                }
+                else 
+                {
+                    contexto.Entry(detalle).State = EntityState.Modified;
+                }
+
+              
+                if (detalle.CiudadId <= 0)
+                {
+                    throw new InvalidOperationException($"El CiudadId {detalle.CiudadId} no es válido para el detalle.");
+                }
+
+              
+                if (detalle.Ciudad != null && detalle.Ciudad.CiudadesId > 0)
+                {
+                    contexto.Entry(detalle.Ciudad).State = EntityState.Unchanged;
+                }
+            }
+
             return await contexto.SaveChangesAsync() > 0;
         }
 
         public async Task<bool> Guardar(Encuesta encuesta)
         {
-            if (!await Existe(encuesta.EncuestaId))
-            {
+            if (!await Existe(encuesta.EncuestasId))
                 return await Insertar(encuesta);
-            }
             else
-            {
                 return await Modificar(encuesta);
-            }
         }
 
-        public async Task<Encuesta> Buscar(int encuestaId)
+        public async Task<bool> Eliminar(int id)
         {
-            await using var contexto = await _dbFactory.CreateDbContextAsync();
-            return await contexto.Encuestas.FirstOrDefaultAsync(e => e.EncuestaId == encuestaId);
+            await using var contexto = await DbFactory.CreateDbContextAsync();
+            var encuesta = await contexto.Encuestas
+                .Where(i => i.EncuestasId == id)
+                .ExecuteDeleteAsync();
+            return encuesta > 0;
         }
 
-        public async Task<bool> Eliminar(int encuestaId)
+        public async Task<Encuesta?> Buscar(int id)
         {
-            await using var contexto = await _dbFactory.CreateDbContextAsync();
-            var encuesta = await contexto.Encuestas.FirstOrDefaultAsync(e => e.EncuestaId == encuestaId);
-            if (encuesta == null) return false;
-
-            contexto.Encuestas.Remove(encuesta);
-            return await contexto.SaveChangesAsync() > 0;
+            await using var contexto = await DbFactory.CreateDbContextAsync();
+            return await contexto.Encuestas
+                .Include(e => e.EncuestaDetalles)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(i => i.EncuestasId == id);
         }
 
         public async Task<List<Encuesta>> Listar(Expression<Func<Encuesta, bool>> criterio)
         {
-            await using var contexto = await _dbFactory.CreateDbContextAsync();
-            return await contexto.Encuestas.Where(criterio).AsNoTracking().ToListAsync();
+            await using var contexto = await DbFactory.CreateDbContextAsync();
+            return await contexto.Encuestas
+                .Include(e => e.EncuestaDetalles)
+                .AsNoTracking()
+                .Where(criterio)
+                .ToListAsync();
         }
     }
 }

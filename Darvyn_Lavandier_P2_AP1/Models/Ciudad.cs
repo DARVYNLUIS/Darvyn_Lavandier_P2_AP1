@@ -1,12 +1,14 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+
 
 public class Ciudad
 {
-    public int Id { get; set; }
+    [Key]
+    public int CiudadesId { get; set; }
 
-    [Required]
-    public string Nombre { get; set; }
+    public string? Nombre { get; set; }
 
-    public List<EncuestaDetalle> EncuestaDetalles { get; set; } = new List<EncuestaDetalle>();
+    public int Monto { get; set; }
 }
 

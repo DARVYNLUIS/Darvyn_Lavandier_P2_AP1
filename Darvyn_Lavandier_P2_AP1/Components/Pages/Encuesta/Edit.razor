@@ -1,145 +1,156 @@
-﻿@page "/Encuesta/Edit/{EncuestaId:int}"
-@using Darvyn_Lavandier_P2_AP1.Services
-@using Darvyn_Lavandier_P2_AP1.Models
-@inject EncuestaService encuestaService
-@inject CiudadService ciudadService
-@inject NavigationManager navigationManager
+﻿@page "/Encuesta/Edit/{Id:int}"
+@inject EncuestaServices EncuestaServices
+@inject CiudadServices CiudadService
+@inject NavigationManager NavigationManager
+@rendermode InteractiveServer
+
 
 <PageTitle>Editar Encuesta</PageTitle>
 
-<EditForm Model="Encuesta" OnValidSubmit="Modificar">
-    <DataAnnotationsValidator />
-
-    <div class="container">
-        <div class="card shadow-lg">
-            <div class="card-header text-center">
-                <h5 class="card-title">Editar Encuesta</h5>
-            </div>
-
-            <div class="card-body">
-                @* EncuestaId *@
-                <div class="mb-3">
-                    <label class="form-label"><strong>EncuestaId</strong></label>
-                    <InputNumber class="form-control" @bind-Value="Encuesta.EncuestaId" readonly></InputNumber>
+@if (Encuesta == null)
+{
+    <p>Cargando...</p>
+}
+else
+{
+    <EditForm Model="Encuesta" OnValidSubmit="Modificar">
+        <DataAnnotationsValidator />
+        <div class="container">
+            <div class="card shadow-lg">
+                <div class="card-header text-center">
+                    <h5 class="card-title">Editar Encuesta #@Encuesta.EncuestasId</h5>
                 </div>
 
-                @* Fecha *@
-                <div class="mb-3">
-                    <label class="form-label"><strong>Fecha</strong></label>
-                    <InputDate class="form-control" @bind-Value="Encuesta.Fecha"></InputDate>
-                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label"><strong>EncuestaId</strong></label>
+                        <InputNumber class="form-control" @bind-Value="Encuesta.EncuestasId" readonly />
+                    </div>
 
-                @* Asignatura *@
-                <div class="mb-3">
-                    <label class="form-label"><strong>Asignatura</strong></label>
-                    <InputText class="form-control" @bind-Value="Encuesta.Asignatura" />
-                </div>
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Fecha</strong></label>
+                        <InputDate class="form-control" @bind-Value="Encuesta.Fecha" />
+                    </div>
 
-                @* Detalles de la Encuesta *@
-                <div class="border border-success p-3 mt-3">
-                    <h5>Detalles de la Encuesta</h5>
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Asignatura</strong></label>
+                        <InputText class="form-control" @bind-Value="Encuesta.Asignatura" />
+                    </div>
 
-                    <CiudadPicker Ciudades="ListaCiudades"
-                                  CiudadId="DetalleSeleccionado.CiudadId"
-                                  Monto="DetalleSeleccionado.Monto"
-                                  OnCiudadSelected="HandleCiudadSelected" />
-                    <hr />
-                    <table class="table table-light">
-                        <thead class="table table-striped">
-                            <tr class="text-center">
-                                <th>CiudadId</th>
-                                <th>Monto</th>
-                                <th>Remover</th>
-                            </tr>
-                        </thead>
-                        <tbody class="text-center">
-                            @foreach (var detalle in Encuesta.Detalles) {
-                                <tr>
-                                    <th>@detalle.CiudadId</th>
-                                    <th>@detalle.Monto.ToString("N2")</th>
-                                    <th>
-                                        <button type="button" class="btn btn-outline-danger bi bi-trash"
-                                            @onclick="() => RemoverDetalle(detalle)">
-                                        </button>
-                                    </th>
+                    <div class="border border-success p-3 mt-3">
+                        <h5>Detalles de la Encuesta</h5>
+                        <CiudadPicker Ciudades="ListaCiudades"
+                                      CiudadId="DetalleSeleccionado.CiudadId"
+                                      Monto="DetalleSeleccionado.MontoEncuesta"
+                                      OnCiudadSelected="HandleCiudadSelected" />
+                        <hr />
+                        <table class="table table-light text-center">
+                            <thead class="thead-light">
+                                <tr class="text-center">
+                                    <th>Ciudad</th>
+                                    <th>Monto</th>
+                                    <th>Acciones</th>
                                 </tr>
-                            }
-                        </tbody>
-                    </table>
-                    <hr />
-                </div>
+                            </thead>
+                            <tbody>
+                                @foreach (var detalle in Encuesta.EncuestaDetalles)
+                                {
+                                    <tr>
+                                        <td>@detalle.Ciudad?.Nombre ?? "Sin ciudad"</td>
+                                        <td>
+                                            <InputNumber class="form-control"
+                                                         @bind-Value="detalle.MontoEncuesta"
+                                                         min="0"
+                                                         @onblur="() => ActualizarDetalle(detalle)" />
+                                        </td>
+                                        <td>
+                                            <button type="button"
+                                                    class="btn btn-outline-danger bi bi-trash"
+                                                    @onclick="() => RemoverDetalle(detalle)"></button>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
 
-                @* Monto Total *@
-                <div class="row mt-2">
-                    <div class="col-6 offset-6">
-                        <div class="mb-3">
-                            <label class="form-label"><strong>Monto Total</strong></label>
-                            <label class="form-control text-end"><strong>@Encuesta.Monto.ToString("N2")</strong></label>
-
-                            <ValidationMessage For="(() => Encuesta.Monto)" />
+                    <div class="row mt-3">
+                        <div class="col-6 offset-6">
+                            <div class="mb-3">
+                                <label class="form-label"><strong>Monto Total</strong></label>
+                                <label class="form-control text-end">
+                                    <strong>@Encuesta.EncuestaDetalles.Sum(d => d.MontoEncuesta).ToString("N2")</strong>
+                                </label>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            @* Footer *@
-            <div class="card-footer text-center mt-2">
-                <a href="/Encuesta/Index" class="btn btn-secondary"> <span class="bi bi-arrow-left"></span> Volver</a>
-                <button type="submit" class="btn btn-primary bi bi-floppy"> Guardar</button>
+                <div class="card-footer text-center mt-2">
+                    <a href="/Encuestas/Index" class="btn btn-secondary">
+                        <span class="bi bi-arrow-left"></span> Volver
+                    </a>
+                    <button type="submit" class="btn btn-primary bi bi-floppy">
+                        Guardar
+                    </button>
+                </div>
             </div>
         </div>
-    </div>
-</EditForm>
+    </EditForm>
+}
 
 @code {
-    [Parameter]
-    public int EncuestaId { get; set; }
+    [Parameter] public int Id { get; set; }
     public Encuesta Encuesta { get; set; } = new Encuesta();
     public EncuestaDetalle DetalleSeleccionado { get; set; } = new();
     public List<Ciudad> ListaCiudades { get; set; } = new List<Ciudad>();
 
-    public string Mensaje { get; set; } = string.Empty;
-
     protected override async Task OnInitializedAsync()
     {
-        Encuesta = await encuestaService.Buscar(EncuestaId);
-        ListaCiudades = await ciudadService.ListarCiudades();
-
-        Encuesta.Fecha = DateTime.Now;
+        Encuesta = await EncuestaServices.Buscar(Id) ?? new Encuesta { Fecha = DateTime.Now };
+        ListaCiudades = await CiudadService.Listar(c => true);
     }
 
-    private async Task HandleCiudadSelected((Ciudad ciudad, double monto) selection)
+    private async Task HandleCiudadSelected((Ciudad ciudad, decimal Monto) selection)
     {
+        if (selection.ciudad == null || selection.ciudad.CiudadesId <= 0)
+            return;
+
         var detalle = new EncuestaDetalle
         {
-            CiudadId = selection.ciudad.Id,
-            Monto = (decimal)selection.monto  
+            CiudadId = selection.ciudad.CiudadesId,
+            Ciudad = selection.ciudad,
+            MontoEncuesta = (int)selection.Monto
+
         };
 
-        Encuesta.Detalles.Add(detalle);
-        Encuesta.Monto = Encuesta.Detalles.Sum(d => d.Monto);
+        Encuesta.EncuestaDetalles.Add(detalle);
+        await InvokeAsync(StateHasChanged);
+    }
 
-        DetalleSeleccionado = new EncuestaDetalle();
-        await Task.CompletedTask;
+    private void ActualizarDetalle(EncuestaDetalle detalle)
+    {
+        // Aquí puedes hacer validaciones o simplemente marcar el detalle como modificado.
+        // Actualizamos el detalle dentro de la lista.
+        var detalleExistente = Encuesta.EncuestaDetalles.FirstOrDefault(d => d.CiudadId == detalle.CiudadId);
+        if (detalleExistente != null)
+        {
+            detalleExistente.MontoEncuesta = detalle.MontoEncuesta;
+        }
     }
 
     public async Task Modificar()
     {
-        var paso = await encuestaService.Guardar(Encuesta);
-
+        var paso = await EncuestaServices.Guardar(Encuesta);
         if (paso)
         {
-            navigationManager.NavigateTo("/Encuesta/Index");
-        }
-        else
-        {
-            Mensaje = "Hubo un error al guardar los datos.";
+            NavigationManager.NavigateTo("/Encuestas/Index");
         }
     }
 
     public void RemoverDetalle(EncuestaDetalle detalle)
     {
-        Encuesta.Detalles.Remove(detalle);
-        DetalleSeleccionado = detalle;
+        Encuesta.EncuestaDetalles.Remove(detalle);
+        StateHasChanged();
     }
 }

@@ -1,76 +1,47 @@
 ﻿using Darvyn_Lavandier_P2_AP1.Models;
-using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
+using System.Linq;
+using System.Linq.Expressions;
 
 namespace Darvyn_Lavandier_P2_AP1.Services
 {
-    public class CiudadService
+    public class CiudadServices(IDbContextFactory<Contexto> DbFactory)
     {
-        private readonly IDbContextFactory<Contexto> _dbFactory;
-
-        public CiudadService(IDbContextFactory<Contexto> dbFactory)
+        public async Task<List<Ciudad>> Listar(Expression<Func<Ciudad, bool>> criterio)
         {
-            _dbFactory = dbFactory;
+            await using var contexto = await DbFactory.CreateDbContextAsync();
+            return await contexto.Ciudades
+                .Where(criterio)
+                .AsNoTracking()
+                .ToListAsync();
         }
 
-        public async Task<bool> Existe(int ciudadId)
+        public async Task<Ciudad?> Buscar(int id)
         {
-            await using var contexto = await _dbFactory.CreateDbContextAsync();
-            return await contexto.Ciudades.AnyAsync(c => c.Id == ciudadId);
-        }
-
-        public async Task<bool> Insertar(Ciudad ciudad)
-        {
-            await using var contexto = await _dbFactory.CreateDbContextAsync();
-            contexto.Ciudades.Add(ciudad);
-            return await contexto.SaveChangesAsync() > 0;
-        }
-
-        public async Task<bool> Modificar(Ciudad ciudad)
-        {
-            await using var contexto = await _dbFactory.CreateDbContextAsync();
-            contexto.Update(ciudad);
-            return await contexto.SaveChangesAsync() > 0;
+            await using var contexto = await DbFactory.CreateDbContextAsync();
+            return await contexto.Ciudades
+                .AsNoTracking()
+                .FirstOrDefaultAsync(c => c.CiudadesId == id);
         }
 
         public async Task<bool> Guardar(Ciudad ciudad)
         {
-            if (!await Existe(ciudad.Id))
+            await using var contexto = await DbFactory.CreateDbContextAsync();
+            var ciudadExistente = await contexto.Ciudades
+                .FirstOrDefaultAsync(c => c.CiudadesId == ciudad.CiudadesId);
+
+            if (ciudadExistente != null)
             {
-                return await Insertar(ciudad);
+             
+                contexto.Entry(ciudadExistente).CurrentValues.SetValues(ciudad);
             }
             else
             {
-                return await Modificar(ciudad);
+            
+                contexto.Ciudades.Add(ciudad);
             }
-        }
 
-        public async Task<Ciudad> Buscar(int ciudadId)
-        {
-            await using var contexto = await _dbFactory.CreateDbContextAsync();
-            return await contexto.Ciudades.FirstOrDefaultAsync(c => c.Id == ciudadId);
-        }
-
-        public async Task<bool> Eliminar(int ciudadId)
-        {
-            await using var contexto = await _dbFactory.CreateDbContextAsync();
-            var ciudad = await contexto.Ciudades.FirstOrDefaultAsync(c => c.Id == ciudadId);
-            if (ciudad == null) return false;
-
-            contexto.Ciudades.Remove(ciudad);
             return await contexto.SaveChangesAsync() > 0;
-        }
-
-        public async Task<List<Ciudad>> Listar(Expression<Func<Ciudad, bool>> criterio)
-        {
-            await using var contexto = await _dbFactory.CreateDbContextAsync();
-            return await contexto.Ciudades.Where(criterio).AsNoTracking().ToListAsync();
-        }
-
-     
-        public async Task<List<Ciudad>> ListarCiudades()
-        {
-            return await Listar(c => true); 
         }
     }
 }
